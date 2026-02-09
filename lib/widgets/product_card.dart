@@ -27,10 +27,11 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: ProductImage(image: product.image),
+              child: ProductImage(image: product.image, fit: BoxFit.contain),
             ),
+            const SizedBox(height: 8),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 product.name,
                 maxLines: 2,
@@ -38,6 +39,7 @@ class ProductCard extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
             ),
+            const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
@@ -45,7 +47,7 @@ class ProductCard extends StatelessWidget {
                 style: TextStyle(color: cs.secondary, fontSize: 13),
               ),
             ),
-            const Spacer(),
+
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 8, 8),
               child: Row(

@@ -17,7 +17,7 @@ class ProductDetailScreen extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: AspectRatio(
         aspectRatio: 1,
-        child: ProductImage(image: product.image),
+        child: ProductImage(image: product.image, fit: BoxFit.contain),
       ),
     );
 
