@@ -1,8 +1,5 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import '../models/user.dart';
 import '../models/product.dart';
 
 class ApiService {

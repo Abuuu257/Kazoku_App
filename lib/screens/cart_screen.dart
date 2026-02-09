@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import '../models/order.dart'; // Ensure Order is imported for type safety if needed
+// Ensure Order is imported for type safety if needed
 import '../widgets/product_image.dart';
 
 class CartScreen extends StatelessWidget {
