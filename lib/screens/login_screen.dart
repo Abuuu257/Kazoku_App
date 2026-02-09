@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import 'register_screen.dart';
 import 'shell.dart';
@@ -16,19 +17,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
 
-  void _submit() {
+  void _submit() async {
     if (_form.currentState!.validate()) {
-      final ok = _email.text.trim() == AppState.kEmail &&
-          _password.text == AppState.kPassword;
-      if (ok) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Shell()),
+      try {
+        await Provider.of<AppState>(context, listen: false).login(
+          _email.text.trim(),
+          _password.text,
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid credentials')),
-        );
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const Shell()),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Login failed: ${e.toString()}')),
+          );
+        }
       }
     }
   }
@@ -37,6 +44,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.watch<AppState>().isLoading;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
@@ -52,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  if (isLoading) const LinearProgressIndicator(),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _email,
@@ -76,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: _submit,
+                      onPressed: isLoading ? null : _submit,
                       child: const Text('Login'),
                     ),
                   ),

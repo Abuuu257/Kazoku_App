@@ -1,7 +1,7 @@
 import '../models/product.dart';
 
 class ProductsData {
-  static const sample = <Product>[
+  static final sample = <Product>[
     Product(
       id: 'p1',
       name: 'Dog Collar (Adjustable)',

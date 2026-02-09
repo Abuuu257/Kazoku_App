@@ -1,8 +1,114 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:battery_plus/battery_plus.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:provider/provider.dart';
+import '../state/app_state.dart';
 import '../widgets/section_title.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final Battery _battery = Battery();
+  int _batteryLevel = 100;
+  // BatteryState is an enum, not an int
+  StreamSubscription<BatteryState>? _batterySubscription;
+  StreamSubscription<UserAccelerometerEvent>? _accelerometerSubscription;
+  DateTime _lastShakeTime = DateTime.fromMillisecondsSinceEpoch(0);
+
+  @override
+  void initState() {
+    super.initState();
+    _initBattery();
+    _initShake();
+  }
+
+  @override
+  void dispose() {
+    _batterySubscription?.cancel();
+    _accelerometerSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initBattery() async {
+    // Get current battery level
+    try {
+      final level = await _battery.batteryLevel;
+      setState(() => _batteryLevel = level);
+      
+      // Listen for changes
+      _batterySubscription = _battery.onBatteryStateChanged.listen((state) async {
+        final level = await _battery.batteryLevel;
+        setState(() => _batteryLevel = level);
+        
+        if (level < 20 && mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(
+               content: Text('Battery is low! Finish your shopping quickly.'),
+               backgroundColor: Colors.orange,
+             ),
+           );
+        }
+      });
+    } catch (e) {
+      debugPrint('Battery info not available: $e');
+    }
+  }
+
+  void _initShake() {
+    _accelerometerSubscription = userAccelerometerEvents.listen((UserAccelerometerEvent event) {
+      // Simple shake detection
+      // If acceleration on any axis is high enough
+      if (event.x.abs() > 15 || event.y.abs() > 15 || event.z.abs() > 15) {
+        final now = DateTime.now();
+        // Debounce shake events (2 seconds)
+        if (now.difference(_lastShakeTime) > const Duration(seconds: 2)) {
+          _lastShakeTime = now;
+          if (mounted) {
+            _handleShake();
+          }
+        }
+      }
+    });
+  }
+
+  void _handleShake() {
+    // Show a random product recommendation
+    final products = context.read<AppState>().products;
+    if (products.isNotEmpty) {
+       final randomProduct = (products..shuffle()).first;
+       showDialog(
+         context: context,
+         builder: (context) => AlertDialog(
+           title: const Text('🎉 Surprise Recommendation!'),
+           content: Column(
+             mainAxisSize: MainAxisSize.min,
+             children: [
+               Text('Because you shook your phone, check this out:\n\n${randomProduct.name}'),
+               const SizedBox(height: 10),
+               Text('LKR ${randomProduct.price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+             ],
+           ),
+           actions: [
+             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+             FilledButton(
+               onPressed: () {
+                 context.read<AppState>().addToCart(randomProduct);
+                 Navigator.pop(context);
+                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${randomProduct.name} added to cart!')));
+               },
+               child: const Text('Add to Cart'),
+             ),
+           ],
+         ),
+       );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +183,28 @@ class HomeScreen extends StatelessWidget {
       ],
     );
 
-    // Portrait: banner on top, then grid, then text sections.
-    // Landscape: banner on left, content on right, grid below.
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (_batteryLevel < 20)
+           Padding(
+             padding: const EdgeInsets.only(bottom: 16.0),
+             child: Container(
+               padding: const EdgeInsets.all(8),
+               decoration: BoxDecoration(
+                 color: Colors.orange.shade100,
+                 borderRadius: BorderRadius.circular(8),
+                 border: Border.all(color: Colors.orange),
+               ),
+               child: Row(
+                 children: [
+                   const Icon(Icons.battery_alert, color: Colors.orange),
+                   const SizedBox(width: 8),
+                   Expanded(child: Text('Battery Low ($_batteryLevel%). Optimizing performance...')),
+                 ],
+               ),
+             ),
+           ),
         if (!isLandscape) ...[
           banner,
           const SizedBox(height: 16),

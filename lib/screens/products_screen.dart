@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../data/products.dart';
 import '../widgets/product_card.dart';
 import '../widgets/responsive_grid.dart';
 import '../state/app_state.dart';
@@ -11,7 +10,12 @@ class ProductsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final products = ProductsData.sample;
+    final products = context.watch<AppState>().products;
+
+    if (products.isEmpty) {
+      return const Center(child: Text('No products found or loading...'));
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: ResponsiveGrid(

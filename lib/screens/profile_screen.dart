@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../state/app_state.dart';
 import 'login_screen.dart';
+import 'order_history_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
+    final user = app.user;
     final cs = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -16,37 +23,53 @@ class ProfileScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 40,
-              backgroundImage: const AssetImage('assets/images/profile.png'),
               backgroundColor: cs.surfaceContainerHighest,
+              // Display local image first, then backend URL, then default icon
+              backgroundImage: user?.profileImageLocal != null
+                  ? FileImage(user!.profileImageLocal!)
+                  : (user?.fullProfileImageUrl != null
+                      ? NetworkImage(user!.fullProfileImageUrl!) as ImageProvider
+                      : null),
+              child: (user?.profileImageLocal == null && user?.fullProfileImageUrl == null)
+                  ? const Icon(Icons.person, size: 40)
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Abdul rahman', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                   Text(user?.name ?? 'Guest', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  Text('abu@gmail.com', style: textTheme.bodySmall),
+                  Text(user?.email ?? '', style: textTheme.bodySmall),
                 ],
               ),
             ),
             FilledButton.tonalIcon(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                );
+              },
               icon: const Icon(Icons.edit_outlined),
               label: const Text('Edit'),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        Card(
-          child: Column(
-            children: const [
-              _InfoTile(title: 'Member since', value: '2025'),
-              _InfoTile(title: 'Orders', value: '3 completed'),
-            ],
-          ),
+        ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          tileColor: cs.surfaceContainer,
+          leading: const Icon(Icons.history),
+          title: const Text('My Orders'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+            );
+          },
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         Card(
           child: Column(
             children: const [
@@ -89,12 +112,14 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 16),
         Center(
           child: FilledButton.icon(
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
+            onPressed: () async {
+              await context.read<AppState>().logout();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
             icon: const Icon(Icons.logout),
             label: const Text('Logout'),
@@ -102,20 +127,6 @@ class ProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
       ],
-    );
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  final String title;
-  final String value;
-  const _InfoTile({required this.title, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(value),
     );
   }
 }
